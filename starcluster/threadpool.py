@@ -14,13 +14,15 @@ from starcluster.logger import log
 class AintJava(Exception):
     pass
 
+
 class ThreadPool(object):
     def __init__(self, size=1, disable_threads=False, job_timeout=600):
         self.disable_threads = disable_threads
         self.threads_queue = Queue.Queue()
         self.results_queue = Queue.Queue()
         self._progress_bar = None
-        if self.disable_threads: size = 0
+        if self.disable_threads:
+            size = 0
         self.pool = pool.Pool(size)
         self.job_timeout = job_timeout
         self.unfinished_tasks = 0
@@ -66,7 +68,7 @@ class ThreadPool(object):
     def get_results(self):
         results = []
         qsize = self.threads_queue.qsize()
-        log.debug("Thread queue size at: %s" % (qsize) )
+        log.debug("Thread queue size at: %s" % (qsize))
         for i in range(qsize):
             log.debug("Collecting output for queue at: %s" % (i))
             thread = self.threads_queue.get()
@@ -108,9 +110,9 @@ class ThreadPool(object):
         if pbar.maxval != 0:
             pbar.finish()
         self.pool.join(timeout=self.job_timeout)
-#        if self._exception_queue.qsize() > 0:
-#            raise exception.ThreadPoolException(
-#                "An error occurred in ThreadPool", self._exception_queue.queue)
+#if self._exception_queue.qsize() > 0:
+#   raise exception.ThreadPoolException(
+#       "An error occurred in ThreadPool", self._exception_queue.queue)
         if return_results:
             return self.get_results()
 
@@ -123,6 +125,7 @@ class ThreadPool(object):
         log.debug('del called in threadpool')
         self.shutdown()
         self.join()
+
 
 def get_thread_pool(size=10, worker_factory=None,
                     disable_threads=False):
