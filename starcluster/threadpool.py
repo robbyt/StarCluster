@@ -15,7 +15,7 @@ class AintJava(Exception):
 
 
 class SimpleJob(object):
-    def __init__(self, method, args=[], kwargs={}, jobid=None,
+    def __init__(self, method, args=None, kwargs=None, jobid=None,
                  results_queue=None, thread_timeout=240, job_timeout=600):
         """ method : a single function call to the job that should be run
             args : any args for the function, as a list
@@ -27,6 +27,12 @@ class SimpleJob(object):
                           python will block for N seconds before killing
                           any background threads
         """
+        if args is None:
+            args = []
+
+        if kwargs is None:
+            kwargs = {}
+
         self.method = method
         self.args = args
         self.kwargs = kwargs
