@@ -16,15 +16,22 @@ class AintJava(Exception):
 
 
 class ThreadPool(object):
-    def __init__(self, size=1, disable_threads=False, job_timeout=600):
+    def __init__(self, size=1, maxjobs=0, disable_threads=False, job_timeout=600):
+
+        # unused?
+        self.maxjobs = maxjobs
         self.disable_threads = disable_threads
+        self.job_timeout = job_timeout
+
         self.threads_queue = Queue.Queue()
         self.results_queue = Queue.Queue()
+
         self._progress_bar = None
+
         if self.disable_threads:
             size = 0
+
         self.pool = pool.Pool(size)
-        self.job_timeout = job_timeout
         self.unfinished_tasks = 0
 
     @property
@@ -38,14 +45,7 @@ class ThreadPool(object):
             self._progress_bar = pbar
         return self._progress_bar
 
-    def simple_job(self, method, args=None, kwargs=None, jobid=None):
-
-        if args is None:
-            args = []
-
-        if kwargs is None:
-            kwargs = {}
-
+    def _thread_spawn(self, method, args, kwargs):
         if isinstance(args, list) or isinstance(args, tuple):
             if isinstance(kwargs, dict):
                 thread = self.pool.spawn(method, *args, **kwargs)
@@ -58,7 +58,16 @@ class ThreadPool(object):
                 thread = self.pool.spawn(method, args)
         else:
             thread = self.pool.spawn(method)
+        return thread
 
+
+    def simple_job(self, method, args=None, kwargs=None, jobid=None,
+                   results_queue=None):
+
+        args = args or []
+        kwargs = kwargs or {}
+
+        thread = self._thread_spawn(method, args, kwargs)
         self.task_start(thread)
 
         if self.threads_queue:
@@ -67,20 +76,26 @@ class ThreadPool(object):
 
     def get_results(self):
         results = []
-        qsize = self.threads_queue.qsize()
-        log.debug("Thread queue size at: %s" % (qsize))
+        qsize = self.results_queue.qsize()
+        log.debug("Results queue size at: %s" % (qsize))
         for i in range(qsize):
             log.debug("Collecting output for queue at: %s" % (i))
-            thread = self.threads_queue.get()
-            log.debug("Found a thread in the queue")
+            thread = self.results_queue.get()
+            log.debug("Found a result in the queue")
             output = thread.value
             log.debug("Output from thread is: %s" % (output))
             results.append(output)
         return results
 
     def map(self, fn, *seq):
-        self.pool.map(fn, *seq)
-        self.pool.join()
+#        self.pool.map(fn, *seq)
+#        self.pool.join()
+        if self.results_queue.qsize() > 0:
+            self.get_results()
+        args = zip(*seq)
+        for seq in args:
+            self.simple_job(fn, seq)
+        return self.wait(numtasks=len(args))
 
     def store_exception(self, e):
         self._exception_queue.put(e)
@@ -90,11 +105,17 @@ class ThreadPool(object):
         self.pool.kill(timeout=self.job_timeout)
 
     def task_start(self, thread):
+        # add a call-back when the thread finishes
         thread.link(self.task_done)
+
+        # increment the counter
         self.unfinished_tasks += 1
 
     def task_done(self, thread):
+        # when a thread is done, move it to the results queue
         self.results_queue.put(thread)
+
+        # and decrement the counter
         self.unfinished_tasks -= 1
 
     def wait(self, numtasks=None, return_results=True):
