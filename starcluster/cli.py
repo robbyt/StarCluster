@@ -3,10 +3,19 @@ StarCluster Command Line Interface:
 
 starcluster [global-opts] action [action-opts] [<action-args> ...]
 """
+
+### Attempt to setup gevent, if installed.
+### this needs to be done before any other modules are loaded
+try:
+    from gevent import monkey
+    from gevent import socket
+    monkey.patch_all()
+except ImportError:
+    import socket
+
 import os
 import sys
 import shlex
-import socket
 import optparse
 import platform
 import traceback
