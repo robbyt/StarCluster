@@ -148,6 +148,6 @@ class ThreadPool(object):
         self.join()
 
 
-def get_thread_pool(size=10, worker_factory=None,
+def get_thread_pool(size=20, worker_factory=None,
                     disable_threads=False):
     return ThreadPool(size=size, disable_threads=disable_threads)
