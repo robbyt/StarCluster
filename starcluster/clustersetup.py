@@ -57,7 +57,7 @@ class DefaultClusterSetup(ClusterSetup):
     """
     Default ClusterSetup implementation for StarCluster
     """
-    def __init__(self, disable_threads=False, num_threads=20):
+    def __init__(self, disable_threads=False, num_threads=80):
         self._nodes = None
         self._master = None
         self._user = None
