@@ -339,7 +339,7 @@ class Cluster(object):
             permissions=[],
             refresh_interval=30,
             disable_queue=False,
-            num_threads=20,
+            num_threads=80,
             disable_threads=False,
             cluster_group=None,
             force_spot_master=False,
