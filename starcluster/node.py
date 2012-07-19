@@ -536,7 +536,13 @@ class Node(object):
         """
         if not dest:
             dest = remote_file
-        rf = self.ssh.remote_file(remote_file, 'r')
+        try:
+            rf = self.ssh.remote_file(remote_file, 'r')
+        except IOError:
+            log.error("Not copying file to target. File not found: %s://%s" % 
+                     (self.alias, remote_file))
+            return
+
         contents = rf.read()
         sts = rf.stat()
         mode = stat.S_IMODE(sts.st_mode)
