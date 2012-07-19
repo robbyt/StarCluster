@@ -548,11 +548,15 @@ class Node(object):
                 log.warn("src and destination are the same: %s, skipping" %
                          remote_file)
                 continue
-            nrf = node.ssh.remote_file(dest, 'w')
-            nrf.write(contents)
-            nrf.chown(uid, gid)
-            nrf.chmod(mode)
-            nrf.close()
+            try:
+                nrf = node.ssh.remote_file(dest, 'w')
+                nrf.write(contents)
+                nrf.chown(uid, gid)
+                nrf.chmod(mode)
+                nrf.close()
+            except IOError:
+                log.error("Problem copying file %s://%s to %s" %
+                          self.alias, remote_file, node.alias)
 
     def remove_user(self, name):
         """
